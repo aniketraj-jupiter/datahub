@@ -1843,6 +1843,14 @@
         "fieldName" : "editedDescription",
         "fieldType" : "TEXT"
       }
+    }, {
+      "name" : "dataPlatformIngestionStatus",
+      "type" : "string",
+      "optional" : true,
+      "Searchable" : {
+        "fieldName" : "dataPlatformIngestionStatus",
+        "fieldType" : "TEXT"
+      }
     } ],
     "Aspect" : {
       "name" : "editableDatasetProperties"
