@@ -14,7 +14,7 @@ import moment from 'moment';
 
 import { capitalizeFirstLetterOnly } from '../../../../../shared/textUtil';
 import { ANTD_GRAY } from '../../../constants';
-import { useEntityData, useRefetch } from '../../../EntityContext';
+import { useEntityData, useRefetch, useEntityUpdate } from '../../../EntityContext';
 import analytics, { EventType, EntityActionType } from '../../../../../analytics';
 import { EntityHealthStatus } from './EntityHealthStatus';
 import { useUpdateDeprecationMutation } from '../../../../../../graphql/mutations.generated';
@@ -23,6 +23,8 @@ import { AddDeprecationDetailsModal } from './AddDeprecationDetailsModal';
 import PlatformContent from './PlatformContent';
 import { getPlatformName } from '../../../utils';
 import EntityCount from './EntityCount';
+
+import { GenericEntityUpdate } from '../../../types';
 
 const EntityTitle = styled(Typography.Title)`
     &&& {
@@ -106,9 +108,21 @@ const TopButtonsWrapper = styled.div`
     margin-bottom: 8px;
 `;
 
+const IngestionContainer = styled.div`
+    display: flex;
+    align-items: baseline;
+`;
+
+const IngestionStatus = styled.div`
+    margin-right: 8px;
+`;
+
 type Props = {
     showDeprecateOption?: boolean;
 };
+
+const INGESTION_ALLOWED_LIST = ['PostgreSQL'];
+const INGESTION_INITIATED_STATUS = 'INITIATED';
 
 export const EntityHeader = ({ showDeprecateOption }: Props) => {
     const { urn, entityType, entityData } = useEntityData();
@@ -121,6 +135,25 @@ export const EntityHeader = ({ showDeprecateOption }: Props) => {
     const externalUrl = entityData?.externalUrl || undefined;
     const entityCount = entityData?.entityCount;
     const hasExternalUrl = !!externalUrl;
+    const description = entityData?.editableProperties?.description || '';
+    const isIngestionAllowed = platformName && INGESTION_ALLOWED_LIST.includes(platformName);
+    const isIngestionDisabled =
+        entityData?.editableProperties?.dataPlatformIngestionStatus === INGESTION_INITIATED_STATUS;
+
+    const updateEntity = useEntityUpdate<GenericEntityUpdate>();
+    const updateDescriptionLegacy = () => {
+        return updateEntity?.({
+            variables: {
+                urn,
+                input: {
+                    editableProperties: {
+                        description,
+                        dataPlatformIngestionStatus: INGESTION_INITIATED_STATUS,
+                    },
+                },
+            },
+        });
+    };
 
     const sendAnalytics = () => {
         analytics.event({
@@ -129,6 +162,24 @@ export const EntityHeader = ({ showDeprecateOption }: Props) => {
             entityType,
             entityUrn: urn,
         });
+    };
+
+    const handleIngestion = async () => {
+        message.loading({ content: 'Ingesting...' });
+        try {
+            if (updateEntity) {
+                // Use the legacy update description path.
+                await updateDescriptionLegacy();
+            }
+            message.destroy();
+            message.success({ content: 'Ingestion Status Updated', duration: 2 });
+        } catch (e: unknown) {
+            message.destroy();
+            if (e instanceof Error) {
+                message.error({ content: `Failed to update description: \n ${e.message || ''}`, duration: 2 });
+            }
+        }
+        refetch?.();
     };
 
     // Update the Deprecation
@@ -271,6 +322,18 @@ export const EntityHeader = ({ showDeprecateOption }: Props) => {
                             </Dropdown>
                         )}
                     </TopButtonsWrapper>
+                    {isIngestionAllowed && (
+                        <IngestionContainer>
+                            <IngestionStatus>
+                                Ingestion Status : {entityData?.editableProperties?.dataPlatformIngestionStatus || 'NA'}
+                            </IngestionStatus>
+
+                            <Button onClick={handleIngestion} disabled={isIngestionDisabled}>
+                                Ingest
+                                <RightOutlined style={{ fontSize: 12 }} />
+                            </Button>
+                        </IngestionContainer>
+                    )}
                     {hasExternalUrl && (
                         <Button href={externalUrl} onClick={sendAnalytics}>
                             View in {platformName}
