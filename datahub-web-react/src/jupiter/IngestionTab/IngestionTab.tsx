@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { RightOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import styled from 'styled-components';
+import { useEntityData } from '../../app/entity/shared/EntityContext';
+
+const STATUS_NOT_INGESTED = 'NOT_INGESTED';
+const STATUS_SYNC_PROGRESS = 'SYNC_PROGRESS';
 
 const SectionHeader = styled.div`
     display: flex;
@@ -17,42 +21,55 @@ const SectionBody = styled.div`
     padding: 20px;
 `;
 
-const TIMEOUT_VALUE = 2000;
+const Details = styled.div`
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px;
+    display: flex;
+`;
+
+const Title = styled.span`
+    font-weight: 800;
+    flex: 0.5;
+`;
+
+const Value = styled.span`
+    flex: 0.5;
+`;
 
 const IngestionTab = () => {
-    const [timerId, setTimerId] = useState<NodeJS.Timeout | null>(null);
-    const [ingestionProgress, setIngestionProgress] = useState({ progress: 0 });
-    const [ingestionDetails, setIngestionDetails] = useState({ ingestionStatus: '', timeStamp: '' });
-
-    useEffect(() => {
-        const currentTimerId = setTimeout(() => {
-            setIngestionProgress({
-                progress: ingestionProgress?.progress + 20,
-            });
-        }, TIMEOUT_VALUE);
-        setTimerId(currentTimerId);
-
-        return () => {
-            clearTimeout(currentTimerId);
-        };
-    }, [ingestionProgress?.progress]);
-
-    useEffect(() => {
-        setIngestionDetails({ ingestionStatus: 'PENDING', timeStamp: '' });
-    }, []);
+    const { entityData } = useEntityData();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleIngestion = () => {
-        // Dummy handler here
-        if (timerId) {
-            clearInterval(timerId);
-        }
-        setIngestionDetails({ ingestionStatus: 'STARTED', timeStamp: '' });
-        // API to trigger ingestion
+        // if (entityData?.name === STATUS_NOT_INGESTED && !isLoading) {
+        console.log(isLoading, STATUS_NOT_INGESTED);
+        setIsLoading(true);
+        // TODO: integrate API to trigger ingestion
+        /*
+        const requestOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urn }),
+        };
+        fetch('/test', requestOptions)
+            .then(async (response) => {
+                if (!response.ok) {
+                    const data = await response.json();
+                    const error = (data && data.message) || response.status;
+                    return Promise.reject(error);
+                }
+                return Promise.resolve();
+            })
+            .catch((error) => {
+                console.log('Error : ', error);
+            })
+            .finally(() => setIsLoading(false));
+            */
+        // }
     };
 
-    const { ingestionStatus, timeStamp } = ingestionDetails;
-
-    const isDisabled = ingestionStatus === 'STARTED';
+    // replace with ingestion status
+    const isDisabled = entityData?.name === STATUS_SYNC_PROGRESS;
 
     return (
         <div>
@@ -64,9 +81,14 @@ const IngestionTab = () => {
                 </Button>
             </SectionHeader>
             <SectionBody>
-                <div>Status : {ingestionStatus}</div>
-                <div>Progress : {ingestionProgress?.progress}</div>
-                <div>Timestamp : {timeStamp}</div>
+                <Details>
+                    <Title>Status : </Title>
+                    <Value>{entityData?.name}</Value>
+                </Details>
+                <Details>
+                    <Title>Timestamp : </Title>
+                    <Value>{entityData?.editableProperties?.description}</Value>
+                </Details>
             </SectionBody>
         </div>
     );
