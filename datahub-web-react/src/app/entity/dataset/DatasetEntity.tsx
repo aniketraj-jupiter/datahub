@@ -27,6 +27,7 @@ import { SidebarDomainSection } from '../shared/containers/profile/sidebar/Domai
 import { ValidationsTab } from '../shared/tabs/Dataset/Validations/ValidationsTab';
 import { OperationsTab } from './profile/OperationsTab';
 import { EntityMenuItems } from '../shared/EntityDropdown/EntityDropdown';
+import IngestionTab from '../../../jupiter/IngestionTab/IngestionTab';
 
 const SUBTYPES = {
     VIEW: 'view',
@@ -166,6 +167,18 @@ export class DatasetEntity implements Entity<Dataset> {
                             return (
                                 (dataset?.dataset?.readRuns?.total || 0) + (dataset?.dataset?.writeRuns?.total || 0) > 0
                             );
+                        },
+                    },
+                },
+                {
+                    name: 'Ingestion',
+                    component: IngestionTab,
+                    display: {
+                        visible: (_, dataset: GetDatasetQuery) => {
+                            return dataset?.dataset?.platform?.name === 'postgres';
+                        },
+                        enabled: (_) => {
+                            return true;
                         },
                     },
                 },
