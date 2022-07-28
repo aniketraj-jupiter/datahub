@@ -28,7 +28,6 @@ import { ValidationsTab } from '../shared/tabs/Dataset/Validations/ValidationsTa
 import { OperationsTab } from './profile/OperationsTab';
 import { EntityMenuItems } from '../shared/EntityDropdown/EntityDropdown';
 import IngestionTab from '../../../jupiter/IngestionTab/IngestionTab';
-import ExternalTab from '../../../jupiter/ExternalTab/ExternalTab';
 
 const SUBTYPES = {
     VIEW: 'view',
@@ -174,19 +173,6 @@ export class DatasetEntity implements Entity<Dataset> {
                 {
                     name: 'Ingestion',
                     component: IngestionTab,
-                    display: {
-                        visible: (_, dataset: GetDatasetQuery) => {
-                            return dataset?.dataset?.platform?.name === 'postgres';
-                        },
-                        enabled: (_) => {
-                            return true;
-                        },
-                    },
-                },
-                {
-                    name: 'Redash',
-                    component: ExternalTab,
-                    properties: { type: 'redash' },
                     display: {
                         visible: (_, dataset: GetDatasetQuery) => {
                             return dataset?.dataset?.platform?.name === 'postgres';

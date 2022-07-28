@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { InfoCircleOutlined, RightOutlined } from '@ant-design/icons';
 import { Typography, Button, Tooltip, Popover } from 'antd';
 import styled from 'styled-components/macro';
@@ -88,6 +88,10 @@ const TopButtonsWrapper = styled.div`
     margin-bottom: 8px;
 `;
 
+const ButtonWrapper = styled.div`
+    margin-right: 12px;
+`;
+
 function getCanEditName(entityType: EntityType, privileges?: PlatformPrivileges) {
     switch (entityType) {
         case EntityType.GlossaryTerm:
@@ -104,6 +108,12 @@ type Props = {
     isNameEditable?: boolean;
 };
 
+const EXTERNAL_PLATFORM_ALLOWED_LIST = ['postgresql', 'redshift'];
+const PLATFORM_POSTGRESQL = 'postgresql';
+const PLATFORM_REDSHIFT = 'redshift';
+const EXTERNAL_PLATFORM_REDASH = 'Redash';
+const REDASH_LINK = 'https://jupiter.money';
+
 export const EntityHeader = ({ refreshBrowser, headerDropdownItems, isNameEditable }: Props) => {
     const { urn, entityType, entityData } = useEntityData();
     const me = useGetAuthenticatedUser();
@@ -113,6 +123,19 @@ export const EntityHeader = ({ refreshBrowser, headerDropdownItems, isNameEditab
     const externalUrl = entityData?.externalUrl || undefined;
     const entityCount = entityData?.entityCount;
     const hasExternalUrl = !!externalUrl;
+
+    const isExternalPlatformEnabled = EXTERNAL_PLATFORM_ALLOWED_LIST.includes(platformName?.toLowerCase() || '');
+
+    const externalPlatformDetails = useMemo(() => {
+        switch (platformName?.toLowerCase()) {
+            case PLATFORM_POSTGRESQL:
+                return { externalPlatformName: EXTERNAL_PLATFORM_REDASH, externalPlatformLink: REDASH_LINK };
+            case PLATFORM_REDSHIFT:
+                return { externalPlatformName: EXTERNAL_PLATFORM_REDASH, externalPlatformLink: REDASH_LINK };
+            default:
+                return { externalPlatformName: '', externalPlatformLink: '' };
+        }
+    }, [platformName]);
 
     const sendAnalytics = () => {
         analytics.event({
@@ -142,6 +165,8 @@ export const EntityHeader = ({ refreshBrowser, headerDropdownItems, isNameEditab
     const hasDetails = entityData?.deprecation?.note !== '' || entityData?.deprecation?.decommissionTime !== null;
     const isDividerNeeded = entityData?.deprecation?.note !== '' && entityData?.deprecation?.decommissionTime !== null;
     const canEditName = isNameEditable && getCanEditName(entityType, me?.platformPrivileges as PlatformPrivileges);
+
+    const { externalPlatformName, externalPlatformLink } = externalPlatformDetails;
 
     return (
         <HeaderContainer>
@@ -190,6 +215,14 @@ export const EntityHeader = ({ refreshBrowser, headerDropdownItems, isNameEditab
             </MainHeaderContent>
             <SideHeaderContent>
                 <TopButtonsWrapper>
+                    {isExternalPlatformEnabled && (
+                        <ButtonWrapper>
+                            <Button href={externalPlatformLink} target="_blank">
+                                View in {externalPlatformName}
+                                <RightOutlined style={{ fontSize: 12 }} />
+                            </Button>
+                        </ButtonWrapper>
+                    )}
                     <CopyUrn urn={urn} isActive={copiedUrn} onClick={() => setCopiedUrn(true)} />
                     {headerDropdownItems && (
                         <EntityDropdown
